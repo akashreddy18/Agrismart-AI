@@ -1,8 +1,7 @@
 import uuid
 from datetime import datetime, date
-from sqlalchemy import String, Numeric, ForeignKey, DateTime, Date, Text
+from sqlalchemy import String, Numeric, ForeignKey, DateTime, Date, Text, Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
 from app.db.base_class import Base
 
 class Expense(Base):

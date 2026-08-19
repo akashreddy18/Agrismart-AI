@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime, date
 from typing import List
-from sqlalchemy import String, Date, ForeignKey, DateTime
+from sqlalchemy import String, Date, ForeignKey, DateTime, Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
 from app.db.base_class import Base
 
 class Crop(Base):

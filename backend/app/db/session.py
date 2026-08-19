@@ -3,12 +3,18 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from app.core.config import settings
 
 # Create async database engine
+engine_options = {
+    "echo": False,
+    "future": True
+}
+
+if settings.DATABASE_URL.startswith("postgresql"):
+    engine_options["pool_size"] = 20
+    engine_options["max_overflow"] = 10
+
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=False,
-    future=True,
-    pool_size=20,
-    max_overflow=10
+    **engine_options
 )
 
 # Async session maker

@@ -1,8 +1,7 @@
 import uuid
 from datetime import date
-from sqlalchemy import String, Numeric, ForeignKey, Date
+from sqlalchemy import String, Numeric, ForeignKey, Date, Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
 from app.db.base_class import Base
 
 class Sales(Base):
