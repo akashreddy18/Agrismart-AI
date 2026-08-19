@@ -1,0 +1,19 @@
+# Python virtual environment
+backend/venv/
+backend/.env
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node dependencies and build outputs
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Logs and system files
+*.log
+.DS_Store
+.idea/
+.vscode/
+.gemini/

@@ -1,0 +1,45 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "farms": "My Farms",
+    "expenses": "Expense Tracker",
+    "calculator": "Tractor Calculator",
+    "labour": "Labour Directory",
+    "fertilizer": "Fertilizer Logs",
+    "irrigation": "Irrigation Logs",
+    "market": "Market Prices",
+    "predictions": "AI Predictions",
+    "assistant": "AI Assistant",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "phone": "Phone Number",
+    "password": "Password",
+    "name": "Full Name",
+    "email": "Email Address",
+    "register_btn": "Register as Farmer",
+    "login_btn": "Sign In",
+    "has_account": "Already have an account? Login",
+    "no_account": "New farmer? Register here"
+  },
+  "dashboard": {
+    "title": "AgriSmart AI Dashboard",
+    "total_farms": "Total Farms",
+    "running_crops": "Active Crops",
+    "total_expenses": "Total Investment",
+    "expected_income": "Expected Yield Value",
+    "roi": "Return on Investment",
+    "analytics": "Financial Analytics",
+    "weather_title": "Current Weather"
+  },
+  "common": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "save": "Save Changes",
+    "delete": "Delete",
+    "add": "Add New"
+  }
+}

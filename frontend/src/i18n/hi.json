@@ -1,0 +1,45 @@
+{
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "farms": "मेरे खेत",
+    "expenses": "खर्च ट्रैकर",
+    "calculator": "ट्रैक्टर कैलकुलेटर",
+    "labour": "मजदूर सूची",
+    "fertilizer": "खाद इतिहास",
+    "irrigation": "सिंचाई इतिहास",
+    "market": "बाजार भाव",
+    "predictions": "एआई भविष्यवाणियां",
+    "assistant": "एआई सहायक",
+    "logout": "लॉगआउट"
+  },
+  "auth": {
+    "login": "लॉगिन",
+    "register": "पंजीकरण",
+    "phone": "फ़ोन नंबर",
+    "password": "पासवर्ड",
+    "name": "पूरा नाम",
+    "email": "ईमेल पता",
+    "register_btn": "किसान पंजीकरण करें",
+    "login_btn": "साइन इन करें",
+    "has_account": "पहले से खाता है? लॉगिन करें",
+    "no_account": "नए किसान? यहाँ पंजीकरण करें"
+  },
+  "dashboard": {
+    "title": "एग्रीस्मार्ट एआई डैशबोर्ड",
+    "total_farms": "कुल खेत",
+    "running_crops": "सक्रिय फसलें",
+    "total_expenses": "कुल निवेश",
+    "expected_income": "अपेक्षित उपज मूल्य",
+    "roi": "निवेश पर लाभ (ROI)",
+    "analytics": "वित्तीय विश्लेषण",
+    "weather_title": "वर्तमान मौसम"
+  },
+  "common": {
+    "submit": "जमा करें",
+    "cancel": "रद्द करें",
+    "loading": "लोड हो रहा है...",
+    "save": "बदलाव सहेजें",
+    "delete": "हटाएं",
+    "add": "नया जोड़ें"
+  }
+}

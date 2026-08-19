@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: agrismart_db
+    restart: always
+    environment:
+      POSTGRES_USER: agrismart_user
+      POSTGRES_PASSWORD: agrismart_password
+      POSTGRES_DB: agrismart_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: agrismart_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: ./backend
+    container_name: agrismart_backend
+    restart: always
+    environment:
+      - PROJECT_NAME=AgriSmart AI
+      - API_V1_STR=/api/v1
+      - SECRET_KEY=c3VwZXJzZWNyZXRrZXlmb3JhZ3Jpc21hcnRhaXByb2R1Y3Rpb25xdWFsaXR5
+      - ACCESS_TOKEN_EXPIRE_MINUTES=11520
+      - DATABASE_URL=postgresql+asyncpg://agrismart_user:agrismart_password@db:5432/agrismart_db
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build: ./frontend
+    container_name: agrismart_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
