@@ -79,6 +79,8 @@ async def create_expense(
         category=expense_in.category,
         amount=expense_in.amount,
         description=expense_in.description,
+        hours=expense_in.hours,
+        rate_per_hour=expense_in.rate_per_hour,
         transaction_date=expense_in.transaction_date
     )
     

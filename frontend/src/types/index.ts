@@ -38,6 +38,8 @@ export interface Expense {
   category: 'SEEDS' | 'FERTILIZERS' | 'PESTICIDES' | 'LABOUR' | 'TRACTOR' | 'DIESEL' | 'IRRIGATION' | 'TRANSPORT' | 'OTHER';
   amount: number;
   description: string | null;
+  hours?: number;
+  rate_per_hour?: number;
   transaction_date: string;
   created_at: string;
 }

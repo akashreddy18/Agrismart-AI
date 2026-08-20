@@ -23,6 +23,12 @@ class Expense(Base):
     description: Mapped[str] = mapped_column(
         Text, nullable=True
     )
+    hours: Mapped[float] = mapped_column(
+        Numeric(10, 2), nullable=True
+    )
+    rate_per_hour: Mapped[float] = mapped_column(
+        Numeric(12, 2), nullable=True
+    )
     transaction_date: Mapped[date] = mapped_column(
         Date, default=date.today
     )
