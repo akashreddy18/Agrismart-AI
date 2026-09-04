@@ -6,6 +6,7 @@ interface AuthContextProps {
   user: User | null;
   token: string | null;
   login: (token: string, user: User) => void;
+  demoLogin: (name?: string) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -46,16 +47,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
 
+  const demoLogin = (name = 'Farmer Ramesh') => {
+    const demoUser: User = {
+      id: 'demo-farmer-001',
+      phone_number: '+919876543210',
+      email: 'farmer@agrismart.ai',
+      full_name: name,
+      preferred_lang: (localStorage.getItem('language') as any) || 'en',
+      created_at: new Date().toISOString(),
+    };
+    login('demo-session-token-' + Date.now(), demoUser);
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
+    // Note: farms, crops, tractor expenses and disease history are preserved in localStorage
+    // so farmer data is NEVER lost across login/logout!
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, demoLogin, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

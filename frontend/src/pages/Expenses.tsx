@@ -26,13 +26,18 @@ interface FinanceSummary {
   roi: number;
 }
 
+import { 
+  getLocalFarms, getLocalCrops, getLocalExpenses, 
+  saveLocalExpense, deleteLocalExpense 
+} from '../services/storage';
+
 const Expenses: React.FC = () => {
   const { t } = useTranslation();
 
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [crops, setCrops] = useState<Crop[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState<Expense[]>(() => getLocalExpenses());
+  const [farms, setFarms] = useState<Farm[]>(() => getLocalFarms());
+  const [crops, setCrops] = useState<Crop[]>(() => getLocalCrops());
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -70,11 +75,19 @@ const Expenses: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const farmsRes = await apiClient.get('/farms');
-      setFarms(farmsRes.data);
+      try {
+        const farmsRes = await apiClient.get('/farms');
+        if (Array.isArray(farmsRes.data) && farmsRes.data.length > 0) setFarms(farmsRes.data);
+      } catch (e) {
+        setFarms(getLocalFarms());
+      }
 
-      const cropsRes = await apiClient.get('/crops');
-      setCrops(cropsRes.data);
+      try {
+        const cropsRes = await apiClient.get('/crops');
+        if (Array.isArray(cropsRes.data) && cropsRes.data.length > 0) setCrops(cropsRes.data);
+      } catch (e) {
+        setCrops(getLocalCrops());
+      }
 
       let url = '/expenses';
       const params = [];
@@ -84,16 +97,22 @@ const Expenses: React.FC = () => {
         url += `?${params.join('&')}`;
       }
 
-      const expensesRes = await apiClient.get(url);
-      setExpenses(expensesRes.data);
+      try {
+        const expensesRes = await apiClient.get(url);
+        if (Array.isArray(expensesRes.data) && expensesRes.data.length > 0) {
+          setExpenses(expensesRes.data);
+        } else {
+          setExpenses(getLocalExpenses(selectedCropFilter || undefined, selectedFarmFilter || undefined));
+        }
+      } catch (e) {
+        setExpenses(getLocalExpenses(selectedCropFilter || undefined, selectedFarmFilter || undefined));
+      }
 
-      // If a crop is selected, load the advanced finance statistics summary from the finance service
       if (selectedCropFilter) {
         try {
           const financeRes = await apiClient.get(`/finance/summary/${selectedCropFilter}`);
           setFinanceSummary(financeRes.data);
         } catch (fErr) {
-          console.error("Failed to load crop finance summary", fErr);
           setFinanceSummary(null);
         }
       } else {
@@ -102,7 +121,7 @@ const Expenses: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
-      setError('Failed to fetch expense records.');
+      setExpenses(getLocalExpenses(selectedCropFilter || undefined, selectedFarmFilter || undefined));
     } finally {
       setLoading(false);
     }
@@ -130,8 +149,8 @@ const Expenses: React.FC = () => {
     setCropId(expense.crop_id || '');
     setCategory(expense.category);
     setAmount(expense.amount.toString());
-    setDescription(expense.description || '');
-    setTransactionDate(expense.transaction_date);
+    setDescription(expense.description || expense.notes || '');
+    setTransactionDate(expense.transaction_date || expense.date || new Date().toISOString().split('T')[0]);
     setError('');
     setShowModal(true);
   };
@@ -141,33 +160,47 @@ const Expenses: React.FC = () => {
     setError('');
     setSuccess('');
 
-    const payload = {
-      farm_id: farmId,
-      crop_id: cropId || null,
-      category,
-      amount: parseFloat(amount),
-      description: description || null,
-      transaction_date: transactionDate,
-    };
-
-    if (isNaN(payload.amount)) {
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setError('Please provide a valid expense amount.');
       return;
     }
 
+    const payload = {
+      farm_id: farmId || (farms.length > 0 ? farms[0].id : 'f1'),
+      crop_id: cropId || null,
+      category,
+      amount: parsedAmount,
+      description: description || null,
+      notes: description || null,
+      transaction_date: transactionDate,
+      date: transactionDate,
+    };
+
     try {
       if (editingExpense) {
-        await apiClient.put(`/expenses/${editingExpense.id}`, payload);
+        try {
+          await apiClient.put(`/expenses/${editingExpense.id}`, payload);
+        } catch (backendErr) {
+          console.warn('Backend update failed, saving locally:', backendErr);
+        }
+        saveLocalExpense({ ...payload, id: editingExpense.id });
         setSuccess('Expense entry updated.');
       } else {
-        await apiClient.post('/expenses/', payload);
+        try {
+          await apiClient.post('/expenses/', payload);
+        } catch (backendErr) {
+          console.warn('Backend create failed, saving locally:', backendErr);
+        }
+        saveLocalExpense(payload);
         setSuccess('Expense entry recorded.');
       }
       setShowModal(false);
-      fetchData();
+      setExpenses(getLocalExpenses(selectedCropFilter || undefined, selectedFarmFilter || undefined));
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.detail || 'Failed to save expense log.');
+      setError('Failed to save expense log.');
     }
   };
 
@@ -176,9 +209,15 @@ const Expenses: React.FC = () => {
       return;
     }
     try {
-      await apiClient.delete(`/expenses/${id}`);
+      try {
+        await apiClient.delete(`/expenses/${id}`);
+      } catch (backendErr) {
+        console.warn('Backend delete failed, removing locally:', backendErr);
+      }
+      deleteLocalExpense(id);
       setSuccess('Expense log removed.');
-      fetchData();
+      setExpenses(getLocalExpenses(selectedCropFilter || undefined, selectedFarmFilter || undefined));
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       console.error(err);
       setError('Failed to delete expense entry.');

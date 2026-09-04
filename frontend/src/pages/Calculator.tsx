@@ -8,6 +8,11 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
+import { 
+  getLocalCrops, deleteLocalCrop,
+  getLocalExpenses, saveLocalExpense, deleteLocalExpense
+} from '../services/storage';
+
 const QUICK_EQUIPMENT_PRESETS = [
   'Mahindra 575 DI Tractor',
   'John Deere 5310 Tractor',
@@ -29,9 +34,16 @@ interface DayGroup {
 const Calculator: React.FC = () => {
   const { t } = useTranslation();
 
-  const [crops, setCrops] = useState<Crop[]>([]);
-  const [selectedCropId, setSelectedCropId] = useState<string>('');
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [crops, setCrops] = useState<Crop[]>(() => getLocalCrops());
+  const [selectedCropId, setSelectedCropId] = useState<string>(() => {
+    const initialCrops = getLocalCrops();
+    return initialCrops.length > 0 ? initialCrops[0].id : '';
+  });
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    const initialCrops = getLocalCrops();
+    const firstCropId = initialCrops.length > 0 ? initialCrops[0].id : undefined;
+    return getLocalExpenses(firstCropId).filter(e => e.category === 'TRACTOR');
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -56,16 +68,27 @@ const Calculator: React.FC = () => {
   const fetchCrops = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/crops');
-      setCrops(response.data);
-      if (response.data.length > 0) {
-        setSelectedCropId(prev => prev && response.data.some((c: Crop) => c.id === prev) ? prev : response.data[0].id);
+      try {
+        const response = await apiClient.get('/crops');
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          setCrops(response.data);
+          setSelectedCropId(prev => prev && response.data.some((c: Crop) => c.id === prev) ? prev : response.data[0].id);
+          return;
+        }
+      } catch (e) {
+        console.warn('Backend crops unavailable, using local store:', e);
+      }
+      const loaded = getLocalCrops();
+      setCrops(loaded);
+      if (loaded.length > 0) {
+        setSelectedCropId(prev => prev && loaded.some(c => c.id === prev) ? prev : loaded[0].id);
       } else {
         setSelectedCropId('');
       }
     } catch (err: any) {
       console.error(err);
-      setError('Failed to load crop cycles. Ensure backend is running.');
+      const loaded = getLocalCrops();
+      setCrops(loaded);
     } finally {
       setLoading(false);
     }
@@ -83,12 +106,21 @@ const Calculator: React.FC = () => {
     }
     try {
       setLoading(true);
-      const response = await apiClient.get(`/expenses?crop_id=${selectedCropId}`);
-      const tractorList = response.data.filter((exp: Expense) => exp.category === 'TRACTOR');
-      setExpenses(tractorList);
+      try {
+        const response = await apiClient.get(`/expenses?crop_id=${selectedCropId}`);
+        const tractorList = response.data.filter((exp: Expense) => exp.category === 'TRACTOR');
+        if (tractorList.length > 0) {
+          tractorList.forEach((exp: Expense) => saveLocalExpense(exp));
+        }
+      } catch (e) {
+        console.warn('Backend expenses unavailable, using local store:', e);
+      }
+      const localTractor = getLocalExpenses(selectedCropId).filter(e => e.category === 'TRACTOR');
+      setExpenses(localTractor);
     } catch (err: any) {
       console.error(err);
-      setError('Failed to fetch tractor expenses.');
+      const localTractor = getLocalExpenses(selectedCropId).filter(e => e.category === 'TRACTOR');
+      setExpenses(localTractor);
     } finally {
       setLoading(false);
     }
@@ -134,13 +166,24 @@ const Calculator: React.FC = () => {
         category: 'TRACTOR',
         amount: calculatedCost,
         hours: hoursVal,
-        rate_per_hour: rateVal,
+        rate: rateVal,
         equipment_name: equip,
-        description: notes.trim() ? `${equip} - ${notes.trim()}` : equip,
+        notes: notes.trim() ? `${equip} - ${notes.trim()}` : equip,
+        date: visitDate,
         transaction_date: visitDate
       };
 
-      await apiClient.post('/expenses', payload);
+      try {
+        await apiClient.post('/expenses', {
+          ...payload,
+          rate_per_hour: rateVal,
+          description: payload.notes
+        });
+      } catch (backendErr) {
+        console.warn('Backend expense create failed, saving locally:', backendErr);
+      }
+
+      saveLocalExpense(payload);
       setSuccess(t('tractor.add_entry_success') || 'Tractor expense recorded successfully!');
       
       // Reset form fields
@@ -150,11 +193,13 @@ const Calculator: React.FC = () => {
       setVisitDate(new Date().toISOString().split('T')[0]);
       setShowAddForm(false);
       
-      // Reload list
-      await fetchExpenses();
+      // Reload list from storage
+      const localTractor = getLocalExpenses(selectedCropId).filter(e => e.category === 'TRACTOR');
+      setExpenses(localTractor);
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.detail || 'Failed to record tractor entry.');
+      setError('Failed to record tractor entry.');
     } finally {
       setLoading(false);
     }
@@ -168,9 +213,16 @@ const Calculator: React.FC = () => {
     setSuccess('');
     setLoading(true);
     try {
-      await apiClient.delete(`/expenses/${id}`);
+      try {
+        await apiClient.delete(`/expenses/${id}`);
+      } catch (backendErr) {
+        console.warn('Backend delete failed, deleting locally:', backendErr);
+      }
+      deleteLocalExpense(id);
       setSuccess(t('tractor.delete_entry_success') || 'Tractor entry deleted.');
-      await fetchExpenses();
+      const localTractor = getLocalExpenses(selectedCropId).filter(e => e.category === 'TRACTOR');
+      setExpenses(localTractor);
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       console.error(err);
       setError('Failed to delete tractor record.');
@@ -186,13 +238,25 @@ const Calculator: React.FC = () => {
     setSuccess('');
     setDeleteCropLoading(true);
     try {
-      await apiClient.delete(`/crops/${selectedCropId}`);
+      try {
+        await apiClient.delete(`/crops/${selectedCropId}`);
+      } catch (backendErr) {
+        console.warn('Backend crop delete failed, deleting locally:', backendErr);
+      }
+      deleteLocalCrop(selectedCropId);
       setShowDeleteCropModal(false);
       setSuccess('Crop cycle and all associated tractor & equipment records have been permanently deleted.');
-      await fetchCrops();
+      const remainingCrops = getLocalCrops();
+      setCrops(remainingCrops);
+      if (remainingCrops.length > 0) {
+        setSelectedCropId(remainingCrops[0].id);
+      } else {
+        setSelectedCropId('');
+      }
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.detail || 'Failed to delete crop cycle.');
+      setError('Failed to delete crop cycle.');
     } finally {
       setDeleteCropLoading(false);
     }

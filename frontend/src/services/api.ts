@@ -31,9 +31,9 @@ apiClient.interceptors.response.use(
       // Clear session local data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // If we are not already on the login page, redirect
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
-        window.location.href = '/login';
+      // If we are not already on the login or register page, redirect with hash
+      if (!window.location.hash.includes('/login') && !window.location.hash.includes('/register')) {
+        window.location.hash = '#/login';
       }
     }
     return Promise.reject(error);

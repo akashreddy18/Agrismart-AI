@@ -6,14 +6,16 @@ import apiClient from '../services/api';
 import type { Crop, Farm, Expense } from '../types';
 import { Sprout, TrendingUp, DollarSign, CloudSun, MapPin, ArrowRight, ShieldAlert, Camera } from 'lucide-react';
 
+import { getLocalFarms, getLocalCrops, getLocalExpenses } from '../services/storage';
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [crops, setCrops] = useState<Crop[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [farms, setFarms] = useState<Farm[]>(() => getLocalFarms());
+  const [crops, setCrops] = useState<Crop[]>(() => getLocalCrops());
+  const [expenses, setExpenses] = useState<Expense[]>(() => getLocalExpenses());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -25,11 +27,28 @@ const Dashboard: React.FC = () => {
           apiClient.get('/expenses')
         ]);
 
-        if (farmsRes.status === 'fulfilled') setFarms(farmsRes.value.data);
-        if (cropsRes.status === 'fulfilled') setCrops(cropsRes.value.data);
-        if (expensesRes.status === 'fulfilled') setExpenses(expensesRes.value.data);
+        if (farmsRes.status === 'fulfilled' && Array.isArray(farmsRes.value.data) && farmsRes.value.data.length > 0) {
+          setFarms(farmsRes.value.data);
+        } else {
+          setFarms(getLocalFarms());
+        }
+
+        if (cropsRes.status === 'fulfilled' && Array.isArray(cropsRes.value.data) && cropsRes.value.data.length > 0) {
+          setCrops(cropsRes.value.data);
+        } else {
+          setCrops(getLocalCrops());
+        }
+
+        if (expensesRes.status === 'fulfilled' && Array.isArray(expensesRes.value.data) && expensesRes.value.data.length > 0) {
+          setExpenses(expensesRes.value.data);
+        } else {
+          setExpenses(getLocalExpenses());
+        }
       } catch (err) {
-        console.error('Error loading dashboard metrics', err);
+        console.warn('Dashboard using local store:', err);
+        setFarms(getLocalFarms());
+        setCrops(getLocalCrops());
+        setExpenses(getLocalExpenses());
       } finally {
         setLoading(false);
       }

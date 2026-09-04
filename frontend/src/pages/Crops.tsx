@@ -5,14 +5,19 @@ import type { Crop, Farm } from '../types';
 import { Sprout, Calendar, Plus, X, Edit, Trash2, ArrowLeft, Layers, CheckCircle, Activity } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
+import { 
+  getLocalFarms, saveLocalFarm, 
+  getLocalCrops, saveLocalCrop, deleteLocalCrop 
+} from '../services/storage';
+
 const Crops: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const farmIdParam = searchParams.get('farm_id');
 
-  const [crops, setCrops] = useState<Crop[]>([]);
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [crops, setCrops] = useState<Crop[]>(() => getLocalCrops(farmIdParam || undefined));
+  const [farms, setFarms] = useState<Farm[]>(() => getLocalFarms());
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -33,16 +38,31 @@ const Crops: React.FC = () => {
     try {
       setLoading(true);
       // Fetch farms to populate dropdowns
-      const farmsRes = await apiClient.get('/farms');
-      setFarms(farmsRes.data);
+      try {
+        const farmsRes = await apiClient.get('/farms');
+        if (Array.isArray(farmsRes.data) && farmsRes.data.length > 0) {
+          farmsRes.data.forEach((f: Farm) => saveLocalFarm(f));
+        }
+      } catch (e) {
+        console.warn('Backend farms fetch failed, using local store:', e);
+      }
+      const loadedFarms = getLocalFarms();
+      setFarms(loadedFarms);
 
-      // Fetch crops (can pass farm_id as query param)
-      const url = farmIdParam ? `/crops?farm_id=${farmIdParam}` : '/crops';
-      const cropsRes = await apiClient.get(url);
-      setCrops(cropsRes.data);
+      // Fetch crops
+      try {
+        const url = farmIdParam ? `/crops?farm_id=${farmIdParam}` : '/crops';
+        const cropsRes = await apiClient.get(url);
+        if (Array.isArray(cropsRes.data) && cropsRes.data.length > 0) {
+          cropsRes.data.forEach((c: Crop) => saveLocalCrop(c));
+        }
+      } catch (e) {
+        console.warn('Backend crops fetch failed, using local store:', e);
+      }
+      setCrops(getLocalCrops(farmIdParam || undefined));
     } catch (err: any) {
       console.error(err);
-      setError('Failed to fetch crops or farms databases.');
+      setCrops(getLocalCrops(farmIdParam || undefined));
     } finally {
       setLoading(false);
     }
@@ -53,8 +73,9 @@ const Crops: React.FC = () => {
   }, [farmIdParam]);
 
   const openCreateModal = () => {
+    const currentFarms = getLocalFarms();
     setEditingCrop(null);
-    setFarmId(farmIdParam || (farms.length > 0 ? farms[0].id : ''));
+    setFarmId(farmIdParam || (currentFarms.length > 0 ? currentFarms[0].id : ''));
     setName('');
     setVariety('');
     setSowingDate(new Date().toISOString().split('T')[0]);
@@ -88,10 +109,20 @@ const Crops: React.FC = () => {
     setError('');
     setSuccess('');
 
+    if (!farmId) {
+      setError('Please select a valid farm for this crop.');
+      return;
+    }
+
+    if (!name.trim()) {
+      setError('Please provide a crop name.');
+      return;
+    }
+
     const payload = {
       farm_id: farmId,
-      name,
-      variety: variety || null,
+      name: name.trim(),
+      variety: variety.trim() || null,
       sowing_date: sowingDate,
       expected_harvest_date: expectedHarvestDate,
       stage,
@@ -100,34 +131,53 @@ const Crops: React.FC = () => {
 
     try {
       if (editingCrop) {
-        await apiClient.put(`/crops/${editingCrop.id}`, payload);
+        try {
+          await apiClient.put(`/crops/${editingCrop.id}`, payload);
+        } catch (backendErr) {
+          console.warn('Backend crop update failed, updating locally:', backendErr);
+        }
+        saveLocalCrop({ ...payload, id: editingCrop.id });
         setSuccess('Crop lifecycle logs updated successfully!');
       } else {
-        await apiClient.post('/crops/', payload);
+        let createdCrop: Crop | null = null;
+        try {
+          const res = await apiClient.post('/crops/', payload);
+          createdCrop = res.data;
+        } catch (backendErr) {
+          console.warn('Backend crop create failed, saving locally:', backendErr);
+        }
+        saveLocalCrop(createdCrop || payload);
         setSuccess('New crop record registered successfully!');
       }
       setShowModal(false);
-      fetchData();
+      setCrops(getLocalCrops(farmIdParam || undefined));
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.detail || 'Failed to submit crop changes.');
+      setError('Failed to submit crop changes.');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this crop cycle record? This will clear its expense parameters.')) {
+    if (!window.confirm('Are you sure you want to delete this crop cycle record? This will permanently remove its associated tractor, fertilizer, and disease records.')) {
       return;
     }
 
     setError('');
     setSuccess('');
     try {
-      await apiClient.delete(`/crops/${id}`);
-      setSuccess('Crop record removed.');
-      fetchData();
+      try {
+        await apiClient.delete(`/crops/${id}`);
+      } catch (backendErr) {
+        console.warn('Backend crop delete failed, deleting locally:', backendErr);
+      }
+      deleteLocalCrop(id);
+      setSuccess('Crop log and all linked expenses deleted successfully!');
+      setCrops(getLocalCrops(farmIdParam || undefined));
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       console.error(err);
-      setError('Failed to delete crop record.');
+      setError('Failed to delete crop.');
     }
   };
 

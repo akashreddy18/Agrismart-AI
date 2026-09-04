@@ -5,8 +5,11 @@ import type { Language } from '../context/LanguageContext';
 import apiClient from '../services/api';
 import { Sprout, Phone, Lock, User, Mail, Globe } from 'lucide-react';
 
+import { useAuth } from '../context/AuthContext';
+
 const Register: React.FC = () => {
   const { t, language, setLanguage } = useTranslation();
+  const { demoLogin } = useAuth();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
@@ -32,7 +35,13 @@ const Register: React.FC = () => {
 
       navigate('/login');
     } catch (err: any) {
-      console.error(err);
+      console.warn('Backend registration failed or offline:', err);
+      if (!err.response || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        // Fallback to offline account creation
+        demoLogin(fullName.trim() || 'Farmer');
+        navigate('/');
+        return;
+      }
       setError(
         err.response?.data?.detail || 'Registration failed. Please verify your details.'
       );

@@ -9,7 +9,7 @@ export interface User {
 
 export interface Farm {
   id: string;
-  user_id: string;
+  user_id?: string;
   name: string;
   location_name: string;
   latitude: number;
@@ -26,8 +26,8 @@ export interface Crop {
   variety: string | null;
   sowing_date: string;
   expected_harvest_date: string;
-  stage: 'SOWING' | 'VEGETATIVE' | 'FLOWERING' | 'HARVEST_READY' | 'HARVESTED';
-  status: 'ACTIVE' | 'COMPLETED' | 'FAILED';
+  stage: 'SOWING' | 'VEGETATIVE' | 'FLOWERING' | 'HARVEST_READY' | 'HARVESTED' | string;
+  status: 'ACTIVE' | 'COMPLETED' | 'FAILED' | string;
   created_at: string;
 }
 
@@ -35,10 +35,13 @@ export interface Expense {
   id: string;
   farm_id: string;
   crop_id: string | null;
-  category: 'SEEDS' | 'FERTILIZERS' | 'PESTICIDES' | 'LABOUR' | 'TRACTOR' | 'DIESEL' | 'IRRIGATION' | 'TRANSPORT' | 'OTHER';
+  category: 'SEEDS' | 'FERTILIZERS' | 'PESTICIDES' | 'LABOUR' | 'TRACTOR' | 'DIESEL' | 'IRRIGATION' | 'TRANSPORT' | 'OTHER' | string;
   amount: number;
-  description: string | null;
+  description?: string | null;
+  notes?: string | null;
+  date?: string;
   hours?: number;
+  rate?: number;
   rate_per_hour?: number;
   equipment_name?: string | null;
   transaction_date: string;
@@ -117,11 +120,14 @@ export interface Sales {
 
 export interface TreatmentOption {
   name: string;
-  category: string;
+  category?: string;
+  type?: string;
   dosage: string;
+  application_method?: string;
   approx_quantity: string;
   approx_cost: string;
-  instructions: string;
+  instructions?: string;
+  safety_instructions?: string;
 }
 
 export interface DiseaseDiagnosis {
@@ -129,7 +135,7 @@ export interface DiseaseDiagnosis {
   crop_name: string;
   disease_name: string;
   confidence: number;
-  confidence_percentage: string;
+  confidence_percentage?: string;
   symptoms: string;
   possible_cause: string;
   recommendations: TreatmentOption[];
@@ -138,7 +144,7 @@ export interface DiseaseDiagnosis {
   safety_instructions: string;
   diagnosis_date: string;
   image_url?: string;
-  disclaimer: string;
+  disclaimer?: string;
   crop_id?: string;
   farm_id?: string;
 }
@@ -154,10 +160,10 @@ export interface DiseaseHistoryItem {
   image_path?: string;
   disease_name: string;
   confidence: number;
-  confidence_percentage: string;
+  confidence_percentage?: string;
   symptoms?: string;
   possible_cause?: string;
-  treatment_recommendations: TreatmentOption[];
+  treatment_recommendations: TreatmentOption[] | string;
   approx_quantity?: string;
   approx_cost?: string;
   safety_instructions?: string;

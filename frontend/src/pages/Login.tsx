@@ -6,13 +6,13 @@ import type { Language } from '../context/LanguageContext';
 import apiClient from '../services/api';
 import { 
   Sprout, Phone, Lock, Globe, Eye, EyeOff, Mail, ArrowLeft, 
-  ShieldCheck, ShieldAlert, KeyRound, CloudSun, TrendingUp
+  ShieldCheck, ShieldAlert, KeyRound, CloudSun, TrendingUp, Sparkles
 } from 'lucide-react';
 
 type ActiveView = 'LOGIN' | 'FORGOT_PASSWORD' | 'RESET_PASSWORD';
 
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, demoLogin } = useAuth();
   const { t, language, setLanguage } = useTranslation();
   const navigate = useNavigate();
 
@@ -67,7 +67,13 @@ const Login: React.FC = () => {
       login(access_token, profileResponse.data);
       navigate('/');
     } catch (err: any) {
-      console.error(err);
+      console.warn('Backend login failed, checking for offline session:', err);
+      if (!err.response || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        // Automatically switch to offline/device session so user can use the app seamlessly
+        demoLogin(username.split('@')[0] || 'Farmer');
+        navigate('/');
+        return;
+      }
       setError(
         err.response?.data?.detail || 'Invalid phone/email or password. Please check your credentials.'
       );
@@ -349,6 +355,19 @@ const Login: React.FC = () => {
                 ) : (
                   t('auth.login_btn')
                 )}
+              </button>
+
+              {/* Instant Offline Demo Access Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  demoLogin('Farmer Ramesh');
+                  navigate('/');
+                }}
+                className="w-full bg-slate-900/80 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 font-bold py-3 px-4 rounded-2xl shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 text-xs sm:text-sm flex items-center justify-center gap-2 mt-1"
+              >
+                <Sparkles className="w-4 h-4 text-emerald-400" />
+                ⚡ Quick Demo / Offline Sign-In (Instant Access)
               </button>
             </form>
           )}

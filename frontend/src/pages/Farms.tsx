@@ -5,11 +5,15 @@ import type { Farm } from '../types';
 import { MapPin, Trash2, Edit, Plus, X, Sprout, Layers, Compass } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
+import { 
+  getLocalFarms, saveLocalFarm, deleteLocalFarm 
+} from '../services/storage';
+
 const Farms: React.FC = () => {
   const { t } = useTranslation();
   
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [farms, setFarms] = useState<Farm[]>(() => getLocalFarms());
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
@@ -20,8 +24,8 @@ const Farms: React.FC = () => {
   // Form input fields
   const [name, setName] = useState('');
   const [locationName, setLocationName] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+  const [latitude, setLatitude] = useState('16.306');
+  const [longitude, setLongitude] = useState('80.436');
   const [acreage, setAcreage] = useState('');
   const [soilType, setSoilType] = useState('Loamy');
 
@@ -29,10 +33,13 @@ const Farms: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/farms');
-      setFarms(response.data);
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        response.data.forEach((f: Farm) => saveLocalFarm(f));
+      }
+      setFarms(getLocalFarms());
     } catch (err: any) {
-      console.error(err);
-      setError('Failed to fetch farms list.');
+      console.warn('Backend unavailable, using persistent local store:', err);
+      setFarms(getLocalFarms());
     } finally {
       setLoading(false);
     }
@@ -71,35 +78,57 @@ const Farms: React.FC = () => {
     setError('');
     setSuccess('');
 
-    const payload = {
-      name,
-      location_name: locationName,
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
-      acreage: parseFloat(acreage),
-      soil_type: soilType,
-    };
+    const parsedLat = parseFloat(latitude) || 16.306;
+    const parsedLon = parseFloat(longitude) || 80.436;
+    const parsedAcreage = parseFloat(acreage);
 
-    if (isNaN(payload.latitude) || isNaN(payload.longitude) || isNaN(payload.acreage)) {
-      setError('Please provide valid numbers for coordinates and acreage.');
+    if (!name.trim() || !locationName.trim()) {
+      setError('Please provide farm name and location.');
       return;
     }
+
+    if (isNaN(parsedAcreage) || parsedAcreage <= 0) {
+      setError('Please provide a valid positive number for acreage.');
+      return;
+    }
+
+    const payload = {
+      name: name.trim(),
+      location_name: locationName.trim(),
+      latitude: parsedLat,
+      longitude: parsedLon,
+      acreage: parsedAcreage,
+      soil_type: soilType,
+    };
 
     try {
       if (editingFarm) {
         // Edit mode
-        await apiClient.put(`/farms/${editingFarm.id}`, payload);
+        try {
+          await apiClient.put(`/farms/${editingFarm.id}`, payload);
+        } catch (backendErr) {
+          console.warn('Backend update failed, saving locally:', backendErr);
+        }
+        saveLocalFarm({ ...payload, id: editingFarm.id });
         setSuccess('Farm updated successfully!');
       } else {
         // Create mode
-        await apiClient.post('/farms/', payload);
+        let createdFarm: Farm | null = null;
+        try {
+          const res = await apiClient.post('/farms/', payload);
+          createdFarm = res.data;
+        } catch (backendErr) {
+          console.warn('Backend create failed, saving to local store:', backendErr);
+        }
+        saveLocalFarm(createdFarm || payload);
         setSuccess('Farm registered successfully!');
       }
       setShowModal(false);
-      fetchFarms();
+      setFarms(getLocalFarms());
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.detail || 'Failed to save farm details.');
+      setError('Failed to save farm details.');
     }
   };
 
@@ -111,9 +140,15 @@ const Farms: React.FC = () => {
     setError('');
     setSuccess('');
     try {
-      await apiClient.delete(`/farms/${id}`);
+      try {
+        await apiClient.delete(`/farms/${id}`);
+      } catch (backendErr) {
+        console.warn('Backend delete failed, removing locally:', backendErr);
+      }
+      deleteLocalFarm(id);
       setSuccess('Farm deleted successfully!');
-      fetchFarms();
+      setFarms(getLocalFarms());
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       console.error(err);
       setError('Failed to delete farm.');
