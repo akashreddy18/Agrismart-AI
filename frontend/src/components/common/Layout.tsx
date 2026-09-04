@@ -18,7 +18,8 @@ import {
   User as UserIcon,
   Globe,
   Droplet,
-  Sparkles
+  Sparkles,
+  ShieldAlert
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -43,6 +44,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: t('nav.farms'), path: '/farms', icon: Map },
     { name: t('nav.expenses'), path: '/expenses', icon: Receipt },
     { name: t('nav.calculator'), path: '/calculator', icon: Calculator },
+    { name: t('nav.disease'), path: '/disease', icon: ShieldAlert },
     { name: t('nav.labour'), path: '/labour', icon: Users },
     { name: t('nav.fertilizer'), path: '/fertilizer', icon: Sprout },
     { name: t('nav.irrigation'), path: '/irrigation', icon: Droplet },

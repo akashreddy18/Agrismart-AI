@@ -8,3 +8,4 @@ from app.models.expense import Expense  # noqa
 from app.models.labour import Labour  # noqa
 from app.models.logs import TractorConfig, FertilizerHistory, IrrigationHistory  # noqa
 from app.models.sales import Sales  # noqa
+from app.models.disease import DiseaseHistory  # noqa

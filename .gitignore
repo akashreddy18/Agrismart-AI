@@ -17,3 +17,6 @@ frontend/*.local
 .idea/
 .vscode/
 .gemini/
+backend/uploads/
+*.db-shm
+*.db-wal

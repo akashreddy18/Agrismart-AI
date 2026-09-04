@@ -99,7 +99,7 @@ class TestMLServices(unittest.TestCase):
         data = response.json()
         self.assertIn("predicted_price_per_qtl", data)
         self.assertIn("price_per_kg", data)
-        print(f"-> Predicted Price: ₹{data['predicted_price_per_qtl']:.2f}/Qtl (₹{data['price_per_kg']:.2f}/kg)")
+        print(f"-> Predicted Price: Rs. {data['predicted_price_per_qtl']:.2f}/Qtl (Rs. {data['price_per_kg']:.2f}/kg)")
 
     def test_disease_detection_endpoint(self):
         print("Testing Disease Detection REST API (Multipart Leaf Upload)...")
@@ -135,7 +135,7 @@ class TestMLServices(unittest.TestCase):
         self.assertIn("recommendation", data)
         self.assertIn("holding_details", data)
         self.assertTrue(len(data["holding_details"]) > 0)
-        print(f"-> Smart Selling Recommendation: {data['recommendation']}")
+        print(f"-> Smart Selling Recommendation: {data['recommendation'].replace('₹', 'Rs.')}")
 
 if __name__ == "__main__":
     unittest.main()

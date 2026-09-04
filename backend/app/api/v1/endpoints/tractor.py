@@ -160,3 +160,117 @@ async def calculate_and_add_tractor_expense(
     await db.flush()
     await db.refresh(expense)
     return expense
+
+@router.get("/summary/{crop_id}")
+async def get_crop_tractor_summary(
+    crop_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Retrieve comprehensive tractor & equipment expense summary for a crop:
+    - Today's tractor expense
+    - Total tractor/equipment expense so far
+    - Total hours used
+    - Day-wise expense history with daily totals
+    - Complete expense history from beginning of crop
+    """
+    crop = await db.get(Crop, crop_id)
+    if not crop:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Crop record not found."
+        )
+
+    farm_repo = FarmRepository(db)
+    farm = await farm_repo.get(crop.farm_id)
+    if not farm or farm.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions to access tractor records for this crop."
+        )
+
+    # Fetch all tractor expenses for this crop, ordered by date descending
+    query = (
+        select(Expense)
+        .where((Expense.crop_id == crop_id) & (Expense.category == "TRACTOR"))
+        .order_by(Expense.transaction_date.desc(), Expense.created_at.desc())
+    )
+    result = await db.execute(query)
+    expenses = list(result.scalars().all())
+
+    today = date.today()
+    today_expense = 0.0
+    today_hours = 0.0
+    total_expense = 0.0
+    total_hours = 0.0
+
+    # Group by transaction_date
+    day_map = {}
+
+    for exp in expenses:
+        exp_amount = float(exp.amount or 0.0)
+        exp_hours = float(exp.hours or 0.0)
+        exp_rate = float(exp.rate_per_hour or 0.0)
+
+        total_expense += exp_amount
+        total_hours += exp_hours
+
+        if exp.transaction_date == today:
+            today_expense += exp_amount
+            today_hours += exp_hours
+
+        date_str = exp.transaction_date.isoformat()
+        if date_str not in day_map:
+            day_map[date_str] = {
+                "date": date_str,
+                "total_cost": 0.0,
+                "total_hours": 0.0,
+                "entries": []
+            }
+        day_map[date_str]["total_cost"] += exp_amount
+        day_map[date_str]["total_hours"] += exp_hours
+        day_map[date_str]["entries"].append({
+            "id": str(exp.id),
+            "farm_id": str(exp.farm_id),
+            "crop_id": str(exp.crop_id),
+            "equipment_name": exp.equipment_name or "Tractor",
+            "hours": exp_hours,
+            "rate_per_hour": exp_rate,
+            "amount": exp_amount,
+            "description": exp.description,
+            "transaction_date": date_str,
+            "created_at": exp.created_at.isoformat() if exp.created_at else None
+        })
+
+    day_wise_history = list(day_map.values())
+
+    return {
+        "crop_id": str(crop.id),
+        "crop_name": crop.name,
+        "crop_variety": crop.variety,
+        "sowing_date": crop.sowing_date.isoformat() if crop.sowing_date else None,
+        "status": crop.status,
+        "today_expense": round(today_expense, 2),
+        "today_hours": round(today_hours, 2),
+        "total_expense": round(total_expense, 2),
+        "total_hours": round(total_hours, 2),
+        "total_entries": len(expenses),
+        "day_wise_history": day_wise_history,
+        "all_entries": [
+            {
+                "id": str(exp.id),
+                "farm_id": str(exp.farm_id),
+                "crop_id": str(exp.crop_id),
+                "equipment_name": exp.equipment_name or "Tractor",
+                "hours": float(exp.hours or 0.0),
+                "rate_per_hour": float(exp.rate_per_hour or 0.0),
+                "amount": float(exp.amount or 0.0),
+                "description": exp.description,
+                "transaction_date": exp.transaction_date.isoformat(),
+                "created_at": exp.created_at.isoformat() if exp.created_at else None
+            }
+            for exp in expenses
+        ]
+    }
+

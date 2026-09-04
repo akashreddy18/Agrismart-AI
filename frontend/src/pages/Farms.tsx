@@ -253,6 +253,12 @@ const Farms: React.FC = () => {
               {editingFarm ? 'Edit Farm Configurations' : 'Register New Farm Segment'}
             </h3>
 
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-4 py-2.5 rounded-2xl text-xs text-center">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-slate-400 text-xs font-semibold uppercase tracking-wider pl-1">Farm Name</label>

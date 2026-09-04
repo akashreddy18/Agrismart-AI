@@ -16,6 +16,15 @@ async def lifespan(app: FastAPI):
     # Create database schemas on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        def check_and_add_columns(connection):
+            from sqlalchemy import inspect, text
+            inspector = inspect(connection)
+            columns = [c['name'] for c in inspector.get_columns('expense')]
+            if 'equipment_name' not in columns:
+                connection.execute(text("ALTER TABLE expense ADD COLUMN equipment_name VARCHAR(100)"))
+
+        await conn.run_sync(check_and_add_columns)
     
     yield
     
@@ -38,8 +47,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import os
+from fastapi.staticfiles import StaticFiles
+
 # Include main api routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Mount uploads static files directory for crop disease images
+uploads_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 @app.get("/", tags=["health"])
 def root():

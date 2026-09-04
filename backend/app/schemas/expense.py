@@ -9,6 +9,7 @@ class ExpenseBase(BaseModel):
     description: Optional[str] = Field(None, description="Detailed notes on the expenditure")
     hours: Optional[float] = Field(None, description="Number of hours (if applicable)")
     rate_per_hour: Optional[float] = Field(None, description="Rate per hour (if applicable)")
+    equipment_name: Optional[str] = Field(None, description="Name of equipment or tractor model")
     transaction_date: date = Field(..., description="Date of the expenditure transaction")
 
 class ExpenseCreate(ExpenseBase):
@@ -21,6 +22,7 @@ class ExpenseUpdate(BaseModel):
     description: Optional[str] = None
     hours: Optional[float] = None
     rate_per_hour: Optional[float] = None
+    equipment_name: Optional[str] = None
     transaction_date: Optional[date] = None
 
 class ExpenseResponse(ExpenseBase):

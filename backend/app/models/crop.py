@@ -48,3 +48,6 @@ class Crop(Base):
     sales: Mapped[List["Sales"]] = relationship(
         "Sales", back_populates="crop", cascade="all, delete-orphan"
     )
+    disease_history: Mapped[List["DiseaseHistory"]] = relationship(
+        "DiseaseHistory", back_populates="crop", cascade="all, delete-orphan"
+    )

@@ -305,6 +305,12 @@ const Labour: React.FC = () => {
               {editingLabour ? 'Edit Worker Parameters' : 'Log Worker Payout'}
             </h3>
 
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-4 py-2.5 rounded-2xl text-xs text-center">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 {/* Select Farm */}

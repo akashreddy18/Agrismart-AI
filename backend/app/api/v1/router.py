@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, farms, crops, expenses, finance, tractor, labour, fertilizer, irrigation, weather, ml, market, assistant
+from app.api.v1.endpoints import auth, farms, crops, expenses, finance, tractor, labour, fertilizer, irrigation, weather, ml, market, assistant, disease
 
 api_router = APIRouter()
 
@@ -17,3 +17,4 @@ api_router.include_router(weather.router, prefix="/weather", tags=["weather"])
 api_router.include_router(ml.router, prefix="/ml", tags=["machine learning"])
 api_router.include_router(market.router, prefix="/market", tags=["market prices"])
 api_router.include_router(assistant.router, prefix="/assistant", tags=["assistant"])
+api_router.include_router(disease.router, prefix="/disease", tags=["disease"])

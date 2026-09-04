@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.config import settings
 from app.db.session import engine, SessionLocal
+import app.db.base
 from app.models.user import User
 from app.models.farm import Farm
 from app.models.crop import Crop
@@ -106,7 +107,7 @@ async def test_expense_calculations():
         db.add(exp1)
         db.add(exp2)
         await db.flush()
-        print("Logged: Seeds (₹1500.00) and Fertilizers (₹3500.00)")
+        print("Logged: Seeds (Rs. 1500.00) and Fertilizers (Rs. 3500.00)")
 
         # 5. Log Sales (500 kg sold at ₹20/kg -> Total Income: 10000)
         print("\n[Step 5] Logging crop yield sales...")
@@ -124,7 +125,7 @@ async def test_expense_calculations():
         db.add(sale)
         await db.flush()
         await db.commit()
-        print("Logged Sale: 500 kg sold @ ₹20/kg = ₹10,000.00 revenue")
+        print("Logged Sale: 500 kg sold @ Rs. 20/kg = Rs. 10,000.00 revenue")
 
         # 6. Execute Calculations via FinanceService
         print("\n[Step 6] Compiling financial performance report...")

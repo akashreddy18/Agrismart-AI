@@ -29,6 +29,9 @@ class Expense(Base):
     rate_per_hour: Mapped[float] = mapped_column(
         Numeric(12, 2), nullable=True
     )
+    equipment_name: Mapped[str] = mapped_column(
+        String(100), nullable=True
+    )
     transaction_date: Mapped[date] = mapped_column(
         Date, default=date.today
     )

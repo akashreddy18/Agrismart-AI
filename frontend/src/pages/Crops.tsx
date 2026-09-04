@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import apiClient from '../services/api';
 import type { Crop, Farm } from '../types';
-import { Sprout, Calendar, Plus, X, Edit, Trash2, ArrowLeft, Layers, CheckCircle } from 'lucide-react';
+import { Sprout, Calendar, Plus, X, Edit, Trash2, ArrowLeft, Layers, CheckCircle, Activity } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
 const Crops: React.FC = () => {
@@ -277,6 +277,14 @@ const Crops: React.FC = () => {
                     {crop.status}
                   </span>
                 </div>
+
+                <Link
+                  to={`/disease?crop_id=${crop.id}`}
+                  className="w-full mt-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl py-2 px-3 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                  {t('nav.disease')} / Check Health
+                </Link>
               </div>
             );
           })}
@@ -299,6 +307,12 @@ const Crops: React.FC = () => {
             <h3 className="text-xl font-bold text-white">
               {editingCrop ? 'Update Crop Milestones' : 'Sow Crop Lifecycle'}
             </h3>
+
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-4 py-2.5 rounded-2xl text-xs text-center">
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {/* Select Farm */}

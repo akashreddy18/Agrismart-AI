@@ -2,12 +2,14 @@ from typing import Any, List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete
 from sqlalchemy.future import select
 
 from app.db.session import get_db
 from app.models.user import User
 from app.models.farm import Farm
 from app.models.crop import Crop
+from app.models.expense import Expense
 from app.repositories.crop_repo import CropRepository
 from app.repositories.farm_repo import FarmRepository
 from app.schemas.crop import CropCreate, CropResponse, CropUpdate
@@ -167,5 +169,8 @@ async def delete_crop(
             detail="Not enough permissions to delete this crop."
         )
         
+    # Permanently delete all associated crop expenses (including tractor & equipment expenses)
+    await db.execute(delete(Expense).where(Expense.crop_id == id))
+    await db.flush()
     await crop_repo.remove(id)
     return crop

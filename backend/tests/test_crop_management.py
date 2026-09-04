@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.config import settings
 from app.db.session import engine, SessionLocal
+import app.db.base
 from app.models.user import User
 from app.models.farm import Farm
 from app.models.crop import Crop

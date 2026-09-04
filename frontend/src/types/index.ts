@@ -40,8 +40,44 @@ export interface Expense {
   description: string | null;
   hours?: number;
   rate_per_hour?: number;
+  equipment_name?: string | null;
   transaction_date: string;
   created_at: string;
+}
+
+export interface TractorDayEntry {
+  id: string;
+  farm_id: string;
+  crop_id: string;
+  equipment_name: string;
+  hours: number;
+  rate_per_hour: number;
+  amount: number;
+  description: string | null;
+  transaction_date: string;
+  created_at?: string | null;
+}
+
+export interface TractorDaySummary {
+  date: string;
+  total_cost: number;
+  total_hours: number;
+  entries: TractorDayEntry[];
+}
+
+export interface TractorCropSummary {
+  crop_id: string;
+  crop_name: string;
+  crop_variety: string | null;
+  sowing_date: string | null;
+  status: string;
+  today_expense: number;
+  today_hours: number;
+  total_expense: number;
+  total_hours: number;
+  total_entries: number;
+  day_wise_history: TractorDaySummary[];
+  all_entries: TractorDayEntry[];
 }
 
 export interface Labour {
@@ -77,4 +113,59 @@ export interface Sales {
   net_income: number;
   roi: number;
   sale_date: string;
+}
+
+export interface TreatmentOption {
+  name: string;
+  category: string;
+  dosage: string;
+  approx_quantity: string;
+  approx_cost: string;
+  instructions: string;
+}
+
+export interface DiseaseDiagnosis {
+  id?: string;
+  crop_name: string;
+  disease_name: string;
+  confidence: number;
+  confidence_percentage: string;
+  symptoms: string;
+  possible_cause: string;
+  recommendations: TreatmentOption[];
+  approx_quantity?: string;
+  approx_cost?: string;
+  safety_instructions: string;
+  diagnosis_date: string;
+  image_url?: string;
+  disclaimer: string;
+  crop_id?: string;
+  farm_id?: string;
+}
+
+export interface DiseaseHistoryItem {
+  id: string;
+  crop_id: string;
+  farm_id: string;
+  crop_name: string;
+  growth_stage?: string;
+  soil_type?: string;
+  previous_fertilizer?: string;
+  image_path?: string;
+  disease_name: string;
+  confidence: number;
+  confidence_percentage: string;
+  symptoms?: string;
+  possible_cause?: string;
+  treatment_recommendations: TreatmentOption[];
+  approx_quantity?: string;
+  approx_cost?: string;
+  safety_instructions?: string;
+  diagnosis_date: string;
+  expense_id?: string;
+  fertilizer_purchased?: string;
+  quantity_purchased?: string;
+  expense_amount?: number;
+  expense_date?: string;
+  created_at: string;
 }

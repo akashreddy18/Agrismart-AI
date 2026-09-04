@@ -81,6 +81,7 @@ async def create_expense(
         description=expense_in.description,
         hours=expense_in.hours,
         rate_per_hour=expense_in.rate_per_hour,
+        equipment_name=expense_in.equipment_name,
         transaction_date=expense_in.transaction_date
     )
     

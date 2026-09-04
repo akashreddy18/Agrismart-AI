@@ -16,6 +16,7 @@ import Crops from './pages/Crops';
 import Fertilizer from './pages/Fertilizer';
 import Irrigation from './pages/Irrigation';
 import MLPredictions from './pages/MLPredictions';
+import DiseaseDetection from './pages/DiseaseDetection';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token, loading } = useAuth();
@@ -146,6 +147,16 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <MLPredictions />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/disease"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <DiseaseDetection />
               </Layout>
             </PrivateRoute>
           }
