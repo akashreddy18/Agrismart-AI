@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AgriSmart AI</title>
+    <script type="text/javascript">
+      var path = window.location.pathname;
+      var repo = '/Agrismart-AI';
+      if (path.startsWith(repo)) {
+        var subpath = path.slice(repo.length);
+        if (subpath && subpath !== '/' && !subpath.startsWith('/#')) {
+          window.location.replace(repo + '/#' + subpath);
+        } else {
+          window.location.replace(repo + '/');
+        }
+      } else {
+        window.location.replace('/Agrismart-AI/');
+      }
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
